@@ -22,6 +22,30 @@ const DEFAULT_DATA: CardData = {
 const PREVIEW_WIDTH = Math.round(BRAND.cardWidth * PREVIEW_SCALE);
 const PREVIEW_HEIGHT = Math.round(BRAND.cardHeight * PREVIEW_SCALE);
 
+/**
+ * Compresses a high-resolution PNG data URL into a lightweight JPEG data URL
+ * to prevent Vercel 413 Payload Too Large errors.
+ */
+async function compressDataUrl(dataUrl: string, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas context unavailable"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = (err) => reject(err);
+    img.src = dataUrl;
+  });
+}
+
 export default function Home() {
   const [data, setData] = useState<CardData>(DEFAULT_DATA);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
@@ -101,10 +125,13 @@ export default function Home() {
         backgroundColor: BRAND.green,
       });
 
+      // Compress to lightweight JPEG to guarantee it stays under Vercel's 4.5MB limit
+      const compressedDataUrl = await compressDataUrl(pngDataUrl, 0.85);
+
       const res = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: pngDataUrl }),
+        body: JSON.stringify({ image: compressedDataUrl }),
       });
 
       const data = (await res.json().catch(() => null)) as

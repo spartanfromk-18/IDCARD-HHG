@@ -3,6 +3,14 @@ import { ApiError, isBlobConfigReady, uploadShareImage } from "@/lib/share-uploa
 
 export const runtime = "nodejs";
 
+// Increase body size limit to 10MB to prevent HTTP 413 on high-res badge uploads
+export const bodyParser = {
+  sizeLimit: '10mb',
+};
+
+// Alternative Next.js App Router segment configuration config:
+export const maxDuration = 30; 
+
 export async function POST(request: NextRequest) {
   const origin = new URL(request.url).origin;
 

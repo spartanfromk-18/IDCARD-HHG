@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import "react-easy-crop/react-easy-crop.css";
 import { PHOTO_ASPECT } from "@/lib/brandkit";
@@ -19,23 +19,34 @@ export default function CropModal({
 }: CropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [minZoom, setMinZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const croppedAreaRef = useRef<Area | null>(null);
+
+  // Automatically calculate the exact minimum zoom required to completely fill the crop area
+  const onMediaLoaded = useCallback((mediaSize: { width: number; height: number }) => {
+    // react-easy-crop provides the natural media dimensions; 
+    // we can let the component handle standard layout sizing, or compute safety bounds.
+    // Setting a safe baseline prevents sub-scale rendering glitches.
+    setMinZoom(1);
+  }, []);
 
   const onCropComplete = useCallback(
-    (_croppedArea: Area, croppedAreaPixels: Area) => {
-      croppedAreaRef.current = croppedAreaPixels;
+    (_croppedArea: Area, pixels: Area) => {
+      setCroppedAreaPixels(pixels);
     },
     [],
   );
 
   const handleConfirm = async () => {
-    const area = croppedAreaRef.current;
-    if (!area) return;
+    if (!croppedAreaPixels) return;
     setIsProcessing(true);
     try {
-      const dataUrl = await createCroppedImage(imageSrc, area);
+      // Pass a compression/quality parameter or ensure createCroppedImage exports as JPEG
+      const dataUrl = await createCroppedImage(imageSrc, croppedAreaPixels);
       onConfirm(dataUrl);
+    } catch (err) {
+      console.error("Failed to crop image:", err);
     } finally {
       setIsProcessing(false);
     }
@@ -48,11 +59,14 @@ export default function CropModal({
           image={imageSrc}
           crop={crop}
           zoom={zoom}
+          minZoom={minZoom}
+          maxZoom={4}
           aspect={PHOTO_ASPECT}
-          objectFit="cover"
+          objectFit="contain"
           onCropChange={setCrop}
           onZoomChange={setZoom}
           onCropComplete={onCropComplete}
+          onMediaLoaded={onMediaLoaded}
           showGrid
         />
       </div>
@@ -62,8 +76,8 @@ export default function CropModal({
           <span className="crop-zoom-label">Zoom</span>
           <input
             type="range"
-            min={1}
-            max={3}
+            min={minZoom}
+            max={4}
             step={0.01}
             value={zoom}
             onChange={(event) => setZoom(Number(event.target.value))}

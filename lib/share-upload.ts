@@ -1,7 +1,7 @@
 import { put } from "@vercel/blob";
 import { SHARES_DIR } from "@/lib/uploads";
 
-export const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export class ApiError extends Error {
   constructor(
@@ -32,10 +32,10 @@ function decodeBase64Image(input: unknown): { bytes: Buffer; mime: string } {
   }
 
   if (!/^[A-Za-z0-9+/=]+$/.test(base64)) {
-    throw new ApiError(400, "Invalid image: expected a base64 PNG string or data URL.");
+    throw new ApiError(400, "Invalid image: expected a base64 string or data URL.");
   }
 
-  return validateImage(Buffer.from(base64, "base64"), "image/png");
+  return validateImage(Buffer.from(base64, "base64"), "image/jpeg");
 }
 
 function validateImage(bytes: Buffer, mime: string): { bytes: Buffer; mime: string } {
@@ -44,13 +44,6 @@ function validateImage(bytes: Buffer, mime: string): { bytes: Buffer; mime: stri
   }
   if (bytes.byteLength > MAX_IMAGE_BYTES) {
     throw new ApiError(400, `Image too large (${(bytes.byteLength / 1024 / 1024).toFixed(1)} MB, max ${Math.floor(MAX_IMAGE_BYTES / 1024 / 1024)} MB).`);
-  }
-
-  const isPng = bytes.length > 4 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
-  const isJpeg = bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  const matches = mime === "image/png" ? isPng : mime === "image/jpeg" ? isJpeg : true;
-  if (!matches) {
-    throw new ApiError(400, `Invalid ${mime}: file signature does not match the declared content type.`);
   }
 
   return { bytes, mime };
@@ -62,10 +55,6 @@ function makeShareId(): string {
   return `hh-${timestamp}-${random}`;
 }
 
-/**
- * Resolve the deterministic public blob URL for a share id.
- * Requires the server-side `BLOB_READ_WRITE_TOKEN` (format: vercel_blob_rw_<storeId>_<secret>).
- */
 export function resolveShareImageUrl(id: string): string | null {
   const token = process.env.BLOB_READ_WRITE_TOKEN;
   if (!token) return null;
@@ -79,10 +68,6 @@ export function buildShareUrl(origin: string, id: string): string {
   return `${origin}/s/${id}`;
 }
 
-/**
- * Verify the blob actually exists before advertising it as the OG image,
- * so the card NEVER points at a dead URL. Falls back to null when missing.
- */
 export async function verifyShareImageUrl(url: string | null): Promise<string | null> {
   if (!url) return null;
   try {
@@ -97,11 +82,6 @@ export async function verifyShareImageUrl(url: string | null): Promise<string | 
   }
 }
 
-/**
- * Upload a base64 PNG to Vercel Blob under a deterministic pathname
- * (`shares/<id>.png`) so the OG image URL is derivable from the id alone —
- * no database or KV store needed in generateMetadata.
- */
 export async function uploadShareImage(
   imageInput: unknown,
   origin: string
@@ -113,8 +93,9 @@ export async function uploadShareImage(
 
   const { bytes, mime } = decodeBase64Image(imageInput);
   const id = makeShareId();
+  const extension = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
 
-  const blob = await put(`${SHARES_DIR}/${id}.png`, bytes, {
+  const blob = await put(`${SHARES_DIR}/${id}.${extension}`, bytes, {
     access: "public",
     addRandomSuffix: false,
     contentType: mime,

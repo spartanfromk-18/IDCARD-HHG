@@ -240,7 +240,7 @@ export default function Home() {
               setData((current) => ({ ...current, role: event.target.value }))
             }
             maxLength={24}
-            placeholder="Your stack or role"
+            placeholder="Who are you ???"
             className="field-input"
           />
 

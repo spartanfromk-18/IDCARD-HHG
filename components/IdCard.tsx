@@ -164,7 +164,7 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
             overflowWrap: "break-word",
           }}
         >
-          {data.name.trim() || "Your Name"}
+          {data.name.trim() || "Linus Torvalds"}
         </p>
         <p
           style={{

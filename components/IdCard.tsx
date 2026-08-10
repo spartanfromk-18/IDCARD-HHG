@@ -24,12 +24,15 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
         backgroundColor: BRAND.green,
         fontFamily: CARD_FONT,
         color: "#ffffff",
+        boxSizing: "border-box",
       }}
     >
+      {/* Background Sunrise */}
       <img
         src={ASSETS.sunRise}
         alt=""
         aria-hidden
+        crossOrigin="anonymous"
         style={{
           position: "absolute",
           inset: 0,
@@ -40,6 +43,7 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
         }}
       />
 
+      {/* Top Header Logos */}
       <div
         style={{
           position: "absolute",
@@ -51,16 +55,24 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
           alignItems: "flex-start",
           justifyContent: "space-between",
           padding: "48px 64px 0",
+          boxSizing: "border-box",
         }}
       >
-        <img src={ASSETS.goaHindi} alt="गोवा" style={{ width: 120 }} />
+        <img
+          src={ASSETS.goaHindi}
+          alt="गोवा"
+          crossOrigin="anonymous"
+          style={{ width: 120, height: "auto" }}
+        />
         <img
           src={ASSETS.wordmark}
           alt="Hacker House Studio"
-          style={{ width: 150 }}
+          crossOrigin="anonymous"
+          style={{ width: 150, height: "auto" }}
         />
       </div>
 
+      {/* Hacker House Banner Title */}
       <div
         style={{
           position: "absolute",
@@ -72,9 +84,15 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
           justifyContent: "center",
         }}
       >
-        <img src={ASSETS.hackerHouse} alt="Hacker House" style={{ width: 760 }} />
+        <img
+          src={ASSETS.hackerHouse}
+          alt="Hacker House"
+          crossOrigin="anonymous"
+          style={{ width: 760, height: "auto" }}
+        />
       </div>
 
+      {/* Profile Photo Container */}
       <div
         style={{
           position: "absolute",
@@ -88,6 +106,7 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
           borderRadius: 36,
           border: `6px solid ${BRAND.yellow}`,
           boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)",
+          backgroundColor: "rgba(0, 0, 0, 0.2)",
         }}
       >
         {photoDataUrl ? (
@@ -117,28 +136,32 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
         )}
       </div>
 
+      {/* User Text Details */}
       <div
         style={{
           position: "absolute",
           top: 935,
-          left: 0,
-          right: 0,
+          left: 48,
+          right: 48,
           zIndex: 10,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          padding: "0 48px",
           textAlign: "center",
+          boxSizing: "border-box",
         }}
       >
         <p
           style={{
             margin: 0,
+            width: "100%",
             fontSize: 62,
             fontWeight: 700,
             lineHeight: 1.08,
             color: "#ffffff",
             textShadow: "0 4px 14px rgba(0, 0, 0, 0.55)",
+            wordBreak: "break-word",
+            overflowWrap: "break-word",
           }}
         >
           {data.name.trim() || "Your Name"}
@@ -146,15 +169,18 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
         <p
           style={{
             margin: "16px 0 0",
+            width: "100%",
             fontSize: 42,
             fontWeight: 500,
             color: BRAND.yellow,
             textShadow: "0 4px 12px rgba(0, 0, 0, 0.55)",
+            wordBreak: "break-word",
+            overflowWrap: "break-word",
           }}
         >
           {data.role.trim() || "Hacker"}
         </p>
-        <p
+        <div
           style={{
             margin: "24px 0 0",
             borderRadius: 9999,
@@ -164,16 +190,22 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
             fontWeight: 700,
             color: BRAND.yellow,
             textShadow: "0 4px 12px rgba(0, 0, 0, 0.55)",
+            maxWidth: "100%",
+            boxSizing: "border-box",
+            wordBreak: "break-word",
+            overflowWrap: "break-word",
           }}
         >
           {data.title.trim() || "Builder"}
-        </p>
+        </div>
       </div>
 
+      {/* Footer Trees Artwork */}
       <img
         src={ASSETS.footerTrees}
         alt=""
         aria-hidden
+        crossOrigin="anonymous"
         style={{
           position: "absolute",
           bottom: 0,
@@ -186,6 +218,7 @@ const IdCard = forwardRef<HTMLDivElement, IdCardProps>(function IdCard(
         }}
       />
 
+      {/* Bottom Footer Text */}
       <p
         style={{
           position: "absolute",

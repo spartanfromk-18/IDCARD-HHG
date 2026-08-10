@@ -22,10 +22,6 @@ const DEFAULT_DATA: CardData = {
 const PREVIEW_WIDTH = Math.round(BRAND.cardWidth * PREVIEW_SCALE);
 const PREVIEW_HEIGHT = Math.round(BRAND.cardHeight * PREVIEW_SCALE);
 
-/**
- * Compresses a high-resolution PNG data URL into a lightweight JPEG data URL
- * to prevent Vercel 413 Payload Too Large errors.
- */
 async function compressDataUrl(dataUrl: string, quality = 0.85): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -110,6 +106,35 @@ export default function Home() {
     }));
   }, []);
 
+  // Direct local high-res download handler
+  const handleDownloadHD = useCallback(async () => {
+    const node = cardRef.current;
+    if (!node) return;
+
+    setIsGenerating(true);
+    setError(null);
+    try {
+      await document.fonts.ready;
+      const pngDataUrl = await toPng(node, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: BRAND.green,
+      });
+
+      const link = document.createElement("a");
+      const safeName = data.name.trim() ? data.name.trim().toLowerCase().replace(/\s+/g, "-") : "builder";
+      link.download = `hh-goa-2026-badge-${safeName}.png`;
+      link.href = pngDataUrl;
+      link.click();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to download badge image.",
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [data.name]);
+
   const handleGenerateAndShare = useCallback(async () => {
     const node = cardRef.current;
     if (!node) return;
@@ -125,7 +150,6 @@ export default function Home() {
         backgroundColor: BRAND.green,
       });
 
-      // Compress to lightweight JPEG to guarantee it stays under Vercel's 4.5MB limit
       const compressedDataUrl = await compressDataUrl(pngDataUrl, 0.85);
 
       const res = await fetch("/api/upload", {
@@ -134,18 +158,18 @@ export default function Home() {
         body: JSON.stringify({ image: compressedDataUrl }),
       });
 
-      const data = (await res.json().catch(() => null)) as
+      const responseData = (await res.json().catch(() => null)) as
         | (UploadResponse & { error?: string })
         | null;
 
       if (!res.ok) {
-        throw new Error(data?.error ?? `Upload failed (HTTP ${res.status})`);
+        throw new Error(responseData?.error ?? `Upload failed (HTTP ${res.status})`);
       }
-      if (!data?.id) {
+      if (!responseData?.id) {
         throw new Error("Upload succeeded but returned no share id.");
       }
 
-      const shareUrl = data.shareUrl || `${window.location.origin}/s/${data.id}`;
+      const shareUrl = responseData.shareUrl || `${window.location.origin}/s/${responseData.id}`;
       const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
         TWEET_TEXT,
       )}&url=${encodeURIComponent(shareUrl)}`;
@@ -170,10 +194,7 @@ export default function Home() {
         <p className="builder-kicker">Hacker House Goa</p>
         <h1>HH Goa 2026 ID Card</h1>
         <p className="muted">
-          Upload a photo, fill in your details, then rasterize the brand kit card and
-          share it to X. The card is uploaded to Vercel Blob and served back as the
-          tweet preview via a share link. HEIC/HEIF files are converted to JPEG
-          instantly before cropping — 100% client-side.
+          Upload a photo, fill in your details, download your HD badge directly to your laptop, or share it straight to X!
         </p>
       </header>
 
@@ -249,17 +270,29 @@ export default function Home() {
 
           {error && <p className="error">{error}</p>}
 
-          <button
-            type="button"
-            onClick={handleGenerateAndShare}
-            disabled={isGenerating}
-            className="button"
-          >
-            {isGenerating ? "Generating & uploading…" : "Generate & Share to X"}
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}>
+            <button
+              type="button"
+              onClick={handleDownloadHD}
+              disabled={isGenerating}
+              className="button"
+              style={{ backgroundColor: "#10b981", color: "#fff" }}
+            >
+              {isGenerating ? "Preparing HD image..." : "📥 Download HD Badge (PNG)"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleGenerateAndShare}
+              disabled={isGenerating}
+              className="button"
+            >
+              {isGenerating ? "Generating & uploading…" : "🚀 Generate & Share to X"}
+            </button>
+          </div>
 
           {lastShareUrl && (
-            <p className="success">
+            <p className="success" style={{ marginTop: "12px" }}>
               Badge uploaded. Permalink: <code>{lastShareUrl}</code>
             </p>
           )}
